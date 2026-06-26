@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marchas Históricas · Peña Ciclista Rodríguez Magro</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--vd:#1B6B47;--vc:#28A06A;--vo:#0D3D28;--cr:#F5F2EB;--na:#E8520A;--gt:#2C2C2A;--gm:#6B6B68;--gl:#D8D5CC;--bl:#FFFFFF;--fd:#EDEAE3}
+body{font-family:'Inter',sans-serif;background:var(--fd);color:var(--gt)}
+
+/* CABECERA */
+.cab{background:var(--vo);position:sticky;top:0;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.cab-i{max-width:1200px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:16px}
+.esc{width:42px;height:42px;border-radius:50%;background:var(--vc);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:white;text-align:center;line-height:1.2;flex-shrink:0}
+.ct{flex:1}
+.ct h1{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:white}
+.ct p{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px}
+.gps-total{background:var(--vc);color:white;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;white-space:nowrap}
+
+/* LAYOUT */
+.layout{max-width:1200px;margin:0 auto;padding:20px 24px;display:grid;grid-template-columns:210px 1fr;gap:20px;align-items:start}
+
+/* ÍNDICE */
+.idx{background:var(--bl);border-radius:12px;border:1px solid var(--gl);overflow:hidden;position:sticky;top:70px;max-height:calc(100vh - 90px);overflow-y:auto}
+.idx-h{background:var(--cr);padding:9px 14px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gm);border-bottom:1px solid var(--gl);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
+.ii{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--gl);text-decoration:none;color:var(--gt);font-size:12px}
+.ii:last-child{border-bottom:none}
+.ii:hover{background:var(--cr)}
+.ii.act{background:#EAF3E6;border-left:3px solid var(--vd)}
+.in{width:22px;height:22px;border-radius:50%;background:var(--vo);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.in.pend{background:var(--gl)}
+.ik b{display:block;font-weight:500;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ik small{font-size:10px;color:var(--gm)}
+.dot{width:7px;height:7px;border-radius:50%;margin-left:auto;flex-shrink:0}
+.dot.gps{background:var(--vc)}
+.dot.pend{background:var(--gl)}
+
+/* FICHAS */
+.fichas{display:flex;flex-direction:column;gap:24px}
+
+/* FICHA */
+.ficha{background:var(--bl);border-radius:14px;border:1px solid var(--gl);overflow:hidden;scroll-margin-top:78px}
+.fh{background:var(--vd);padding:14px 20px;display:flex;align-items:flex-start;gap:12px}
+.fn{background:var(--na);color:white;border-radius:6px;padding:3px 10px;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;flex-shrink:0;margin-top:2px}
+.ft{flex:1}
+.ft h2{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:white;line-height:1;margin-bottom:3px}
+.ft p{font-size:11px;color:rgba(255,255,255,.65);line-height:1.45}
+.fbadge{border-radius:4px;padding:3px 9px;font-size:10px;font-weight:600;flex-shrink:0;margin-top:3px;display:flex;align-items:center;gap:4px}
+.fbadge.gps{background:rgba(93,236,160,.2);color:#5DECA0}
+.fbadge.croquis{background:rgba(239,159,39,.2);color:#EF9F27}
+.fbadge::before{content:'';width:6px;height:6px;border-radius:50%;display:inline-block}
+.fbadge.gps::before{background:#5DECA0}
+.fbadge.croquis::before{background:#EF9F27}
+
+.fb{display:grid;grid-template-columns:245px 1fr}
+.fi{padding:14px 16px;border-right:1px solid var(--gl);display:flex;flex-direction:column;gap:11px}
+.fd{padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+
+.dt{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--gl);font-size:12px}
+.dt:last-child{border-bottom:none}
+.dl{color:var(--gm)}.dv{font-weight:600}.dv.g{color:var(--vc)}
+.bf{background:#D4EDDA;color:#1A6B35;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:600}
+.bm{background:#FFF3CD;color:#856404;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:600}
+.gpsbadge{background:#EAF3E6;color:#1A6B35;border-radius:3px;padding:0 5px;font-size:9px;font-weight:600;margin-left:4px}
+.crobadge{background:#FFF3CD;color:#856404;border-radius:3px;padding:0 5px;font-size:9px;font-weight:600;margin-left:4px}
+
+.sh{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gm);margin-bottom:4px}
+.tg{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.tc{background:var(--cr);border-radius:6px;padding:7px 3px;text-align:center}
+.tG{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--vd);line-height:1}
+.tv{font-size:9px;color:var(--gm);margin:2px 0}.tt{font-size:11px;font-weight:600}
+.pr{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--gl);font-size:12px}
+.pr:last-child{border-bottom:none}
+.pc{width:20px;height:20px;border-radius:50%;background:var(--vo);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pn{flex:1;font-weight:500}.pk{color:var(--gm);font-size:10px}
+.ai{display:flex;gap:7px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--gl);font-size:12px;line-height:1.4}
+.ai:last-child{border-bottom:none}.ai span{color:#E8A020;flex-shrink:0}
+.sbtn{display:flex;align-items:center;justify-content:center;gap:6px;color:white;border:none;border-radius:7px;padding:8px;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;text-decoration:none;width:100%}
+
+/* MAPA */
+.mw{border-radius:10px;overflow:hidden;border:1px solid var(--gl)}
+.mh{background:var(--cr);padding:7px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gl)}
+.mh-tit{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gm)}
+.mh-badge{font-size:10px;font-weight:600}
+.mh-badge.gps{color:var(--vc)}
+.mh-badge.croquis{color:#E8A020}
+.map-div{height:250px}
+
+
+
+.mleg{padding:7px 12px;display:flex;gap:12px;font-size:10px;color:var(--gm);border-top:1px solid var(--gl);flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:4px}
+.ll{width:14px;height:3px;border-radius:2px}
+.lp{width:8px;height:8px;border-radius:50%;border:1.5px solid white}
+
+/* PERFIL */
+.pw{border-radius:10px;overflow:hidden;border:1px solid var(--gl)}
+.ph{background:var(--cr);padding:7px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gl);flex-wrap:wrap;gap:4px}
+.ph-tit{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gm)}
+.pst{display:flex;gap:10px;font-size:11px}
+.psl{color:var(--gm)}.psv{font-weight:600;color:var(--vc);margin-left:2px}
+.pc2{padding:10px 12px 4px;height:120px}
+.ptbl{border-top:1px solid var(--gl);overflow-x:auto}
+.ptbl table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:var(--cr);padding:4px 7px;text-align:left;font-weight:600;color:var(--gm);font-size:10px;border-bottom:1px solid var(--gl);white-space:nowrap}
+td{padding:4px 7px;border-bottom:1px solid var(--gl);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td.dst{font-weight:600;color:var(--vd)}td.ori{font-weight:600;color:var(--na)}
+
+
+
+/* FICHA PENDIENTE */
+.ficha-pend{background:var(--bl);border-radius:14px;border:1px dashed var(--gl);padding:20px 24px;display:flex;align-items:center;gap:16px;scroll-margin-top:78px}
+.fp-num{width:38px;height:38px;border-radius:50%;background:var(--cr);color:var(--gm);font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fp-txt h3{font-size:13px;font-weight:500;color:var(--gm);margin-bottom:2px}
+.fp-txt p{font-size:11px;color:var(--gl)}
+.fp-cta{margin-left:auto;background:var(--cr);border:1px solid var(--gl);border-radius:7px;padding:6px 12px;font-size:11px;color:var(--gm);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap}
+.fp-cta:hover{background:var(--gl);color:var(--gt)}
+
+.pie{max-width:1200px;margin:0 auto;padding:10px 24px 28px;display:flex;justify-content:space-between;font-size:11px;color:var(--gm);flex-wrap:wrap;gap:4px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.idx{position:static;max-height:none}.fb{grid-template-columns:1fr}.fi{border-right:none;border-bottom:1px solid var(--gl)}.tg{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="cab">
+  <div class="cab-i">
+    <div class="esc">PCR<br>M</div>
+    <div class="ct">
+      <h1>Peña Ciclista Rodríguez Magro · Alcalá de Henares</h1>
+      <p>Libro de Marchas Históricas · desde 1980s · digitalización 2026</p>
+    </div>
+    <div class="gps-total" id="cab-counter">4 GPS · 186 pendientes</div>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="idx">
+    <div class="idx-h">Marchas <span id="idx-gps-count" style="background:#EAF3E6;color:var(--vd);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600">4 GPS</span></div>
+    <a class="ii" href="#m1"><div class="in">1</div><div class="ik"><b>Galápagos Clásica</b><small>56,9 km</small></div><div class="dot gps" title="GPS real"></div></a>
+    <a class="ii" href="#m2"><div class="in">2</div><div class="ik"><b>Valdeaveruelo</b><small>48,3 km</small></div><div class="dot gps" title="GPS real"></div></a>
+    <a class="ii" href="#m3"><div class="in">3</div><div class="ik"><b>Cruce Las Castillas</b><small>52,7 km</small></div><div class="dot gps" title="GPS real"></div></a>
+    <a class="ii" href="#m4"><div class="in">4</div><div class="ik"><b>Vuelta a Quer</b><small>58,1 km</small></div><div class="dot gps" title="GPS real"></div></a>
+    <a class="ii" href="#m5"><div class="in pend">5</div><div class="ik"><b>Ribatejada Grande</b><small>pendiente GPX</small></div><div class="dot pend"></div></a>
+    <div style="padding:8px 12px;font-size:10px;color:var(--gl);border-top:1px solid var(--gl)">··· 185 marchas más</div>
+  </nav>
+
+  <div class="fichas">
+
+    <!-- ══ M1 GPS ══ -->
+    <div class="ficha" id="m1">
+      <div class="fh">
+        <div class="fn">1</div>
+        <div class="ft"><h2>Galápagos Clásica</h2><p>Alcalá → Camarma → Torrejón del Rey → Galápagos → Torrejón del Rey → Camarma → Alcalá</p></div>
+        <div class="fbadge gps">GPS real · Strava</div>
+      </div>
+      <div class="fb">
+        <div class="fi">
+          <div>
+            <div class="dt"><span class="dl">Distancia GPS</span><span class="dv g">56,9 km</span></div>
+            <div class="dt"><span class="dl">Desnivel +</span><span class="dv g">292 m <span class="gpsbadge">GPS</span></span></div>
+            <div class="dt"><span class="dl">Altitud máxima</span><span class="dv">739 m</span></div>
+            <div class="dt"><span class="dl">Terreno</span><span class="dv">100% asfalto</span></div>
+            <div class="dt"><span class="dl">Provincias</span><span class="dv">M · GU · M</span></div>
+            <div class="dt"><span class="dl">Dificultad</span><span class="bf">Fácil</span></div>
+          </div>
+          <div><div class="sh">Tiempo estimado</div><div class="tg">
+            <div class="tc"><div class="tG">A</div><div class="tv">30 km/h</div><div class="tt">1h 54m</div></div>
+            <div class="tc"><div class="tG">B</div><div class="tv">27 km/h</div><div class="tt">2h 06m</div></div>
+            <div class="tc"><div class="tG">C</div><div class="tv">24 km/h</div><div class="tt">2h 22m</div></div>
+            <div class="tc"><div class="tG">D</div><div class="tv">22 km/h</div><div class="tt">2h 35m</div></div>
+          </div></div>
+          <div><div class="sh">Reagrupamientos</div>
+            <div class="pr"><div class="pc">1</div><div class="pn">Camarma de Esteruelas</div><div class="pk">km ~11</div></div>
+            <div class="pr"><div class="pc">2</div><div class="pn">Torrejón del Rey</div><div class="pk">km ~22</div></div>
+            <div class="pr"><div class="pc">3</div><div class="pn">Galápagos</div><div class="pk">km ~31</div></div>
+          </div>
+          <div><div class="sh">Atención</div>
+            <div class="ai"><span>⚠</span>Cruces en Meco y Camarma — precaución</div>
+            <div class="ai"><span>⚠</span>Tramo Valdeavero–Torrejón: estrecho en puntos</div>
+          </div>
+          <a class="sbtn" style="background:#FC4C02" href="https://www.strava.com/routes/3504816763773271290" target="_blank">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>Ver en Strava
+          </a>
+        </div>
+        <div class="fd">
+          <div class="mw">
+            <div class="mh"><span class="mh-tit">Mapa · GPS real</span><span class="mh-badge gps">✓ Strava Route Builder</span></div>
+            <div class="map-div" id="map1"></div>
+            <div class="mleg"><div class="li"><div class="ll" style="background:#1B6B47"></div>Trazado GPS</div><div class="li"><div class="lp" style="background:#E8520A;border-color:#E8520A"></div>Salida/Meta</div><div class="li"><div class="lp" style="background:#1B6B47;border-color:#1B6B47"></div>Punto clave</div><div class="li" style="margin-left:auto;color:var(--gl)">© OSM</div></div>
+          </div>
+          <div class="pw">
+            <div class="ph"><span class="ph-tit">Perfil altimétrico · GPS</span><div class="pst"><span><span class="psl">Máx.</span><span class="psv">739 m</span></span><span><span class="psl">↑</span><span class="psv">292 m</span></span><span><span class="psl">D.</span><span class="psv">56,9 km</span></span></div></div>
+            <div class="pc2"><canvas id="p1"></canvas></div>
+            <div class="ptbl"><table>
+              <tr><th>Punto</th><th>Alcalá</th><th>Camarma</th><th>T.Rey</th><th>Galápagos</th><th>T.Rey</th><th>Camarma</th><th>Alcalá</th></tr>
+              <tr><td style="color:var(--gm);font-weight:600">km</td><td class="ori">0</td><td>11</td><td>22</td><td class="dst">31</td><td>38</td><td>48</td><td class="ori">56,9</td></tr>
+              <tr><td style="color:var(--gm);font-weight:600">m</td><td class="ori">594</td><td>680</td><td>724</td><td class="dst">739</td><td>722</td><td>651</td><td class="ori">593</td></tr>
+            </table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ M2 GPS ══ -->
+    <div class="ficha" id="m2">
+      <div class="fh">
+        <div class="fn">2</div>
+        <div class="ft"><h2>Valdeaveruelo</h2><p>Alcalá → Camarma → Torrejón del Rey → Quer → Alovera → Valdeaveruelo → Camarma → Alcalá</p></div>
+        <div class="fbadge gps">GPS real · Strava</div>
+      </div>
+      <div class="fb">
+        <div class="fi">
+          <div>
+            <div class="dt"><span class="dl">Distancia GPS</span><span class="dv g">48,3 km</span></div>
+            <div class="dt"><span class="dl">Desnivel +</span><span class="dv g">302 m <span class="gpsbadge">GPS</span></span></div>
+            <div class="dt"><span class="dl">Altitud máxima</span><span class="dv">800 m</span></div>
+            <div class="dt"><span class="dl">Terreno</span><span class="dv">100% asfalto</span></div>
+            <div class="dt"><span class="dl">Provincias</span><span class="dv">M · GU · M</span></div>
+            <div class="dt"><span class="dl">Dificultad</span><span class="bf">Fácil</span></div>
+          </div>
+          <div><div class="sh">Tiempo estimado</div><div class="tg">
+            <div class="tc"><div class="tG">A</div><div class="tv">30 km/h</div><div class="tt">1h 37m</div></div>
+            <div class="tc"><div class="tG">B</div><div class="tv">27 km/h</div><div class="tt">1h 47m</div></div>
+            <div class="tc"><div class="tG">C</div><div class="tv">24 km/h</div><div class="tt">2h 01m</div></div>
+            <div class="tc"><div class="tG">D</div><div class="tv">22 km/h</div><div class="tt">2h 12m</div></div>
+          </div></div>
+          <div><div class="sh">Reagrupamientos</div>
+            <div class="pr"><div class="pc">1</div><div class="pn">Torrejón del Rey</div><div class="pk">km ~16</div></div>
+            <div class="pr"><div class="pc">2</div><div class="pn">Valdeaveruelo</div><div class="pk">km ~25</div></div>
+            <div class="pr"><div class="pc">3</div><div class="pn">Camarma (vuelta)</div><div class="pk">km ~40</div></div>
+          </div>
+          <div><div class="sh">Atención</div>
+            <div class="ai"><span>⚠</span>Subida a Valdeaveruelo (800 m) — la más dura de la ruta</div>
+            <div class="ai"><span>⚠</span>Descenso largo hasta Camarma en la vuelta</div>
+          </div>
+          <a class="sbtn" style="background:#FC4C02" href="https://www.strava.com/routes/3504823890700597498" target="_blank">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>Ver en Strava
+          </a>
+        </div>
+        <div class="fd">
+          <div class="mw">
+            <div class="mh"><span class="mh-tit">Mapa · GPS real</span><span class="mh-badge gps">✓ Strava Route Builder</span></div>
+            <div class="map-div" id="map2"></div>
+            <div class="mleg"><div class="li"><div class="ll" style="background:#1B6B47"></div>Trazado GPS</div><div class="li"><div class="lp" style="background:#E8520A;border-color:#E8520A"></div>Salida/Meta</div><div class="li" style="margin-left:auto;color:var(--gl)">© OSM</div></div>
+          </div>
+          <div class="pw">
+            <div class="ph"><span class="ph-tit">Perfil altimétrico · GPS</span><div class="pst"><span><span class="psl">Máx.</span><span class="psv">800 m</span></span><span><span class="psl">↑</span><span class="psv">302 m</span></span><span><span class="psl">D.</span><span class="psv">48,3 km</span></span></div></div>
+            <div class="pc2"><canvas id="p2"></canvas></div>
+            <div class="ptbl"><table>
+              <tr><th>Punto</th><th>Alcalá</th><th>Camarma</th><th>T.Rey</th><th>Quer</th><th>Valdeaveruelo</th><th>Camarma</th><th>Alcalá</th></tr>
+              <tr><td style="color:var(--gm);font-weight:600">km</td><td class="ori">0</td><td>8</td><td>16</td><td>21</td><td class="dst">25</td><td>40</td><td class="ori">48,3</td></tr>
+              <tr><td style="color:var(--gm);font-weight:600">m</td><td class="ori">594</td><td>643</td><td>657</td><td>715</td><td class="dst">800</td><td>643</td><td class="ori">594</td></tr>
+            </table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ M3 GPS ══ -->
+    <div class="ficha" id="m3">
+      <div class="fh">
+        <div class="fn">3</div>
+        <div class="ft"><h2>Cruce Las Castillas</h2><p>Alcalá → Daganzo → Fresno de Torote → Ribatejada → Cruce Las Castillas → Galápagos → Torrejón del Rey → Camarma → Alcalá</p></div>
+        <div class="fbadge gps">GPS real · Strava</div>
+      </div>
+      <div class="fb">
+        <div class="fi">
+          <div>
+            <div class="dt"><span class="dl">Distancia GPS</span><span class="dv g">52,7 km</span></div>
+            <div class="dt"><span class="dl">Desnivel +</span><span class="dv g">387 m <span class="gpsbadge">GPS</span></span></div>
+            <div class="dt"><span class="dl">Altitud máxima</span><span class="dv">793 m</span></div>
+            <div class="dt"><span class="dl">Terreno</span><span class="dv">100% asfalto</span></div>
+            <div class="dt"><span class="dl">Provincias</span><span class="dv">M · GU · M</span></div>
+            <div class="dt"><span class="dl">Dificultad</span><span class="bm">Medio</span></div>
+          </div>
+          <div><div class="sh">Tiempo estimado</div><div class="tg">
+            <div class="tc"><div class="tG">A</div><div class="tv">30 km/h</div><div class="tt">1h 45m</div></div>
+            <div class="tc"><div class="tG">B</div><div class="tv">27 km/h</div><div class="tt">1h 57m</div></div>
+            <div class="tc"><div class="tG">C</div><div class="tv">24 km/h</div><div class="tt">2h 12m</div></div>
+            <div class="tc"><div class="tG">D</div><div class="tv">22 km/h</div><div class="tt">2h 24m</div></div>
+          </div></div>
+          <div><div class="sh">Reagrupamientos</div>
+            <div class="pr"><div class="pc">1</div><div class="pn">Daganzo de Arriba</div><div class="pk">km ~10</div></div>
+            <div class="pr"><div class="pc">2</div><div class="pn">Ribatejada</div><div class="pk">km ~26</div></div>
+            <div class="pr"><div class="pc">3</div><div class="pn">Camarma de Esteruelas</div><div class="pk">km ~49</div></div>
+          </div>
+          <div><div class="sh">Atención</div>
+            <div class="ai"><span>⚠</span>Subida al cruce Las Castillas — la más dura del recorrido</div>
+            <div class="ai"><span>⚠</span>Tramo Ribatejada–Torrejón: curvas, carretera estrecha</div>
+          </div>
+          <a class="sbtn" style="background:#FC4C02" href="https://www.strava.com/routes/3505479869434181454" target="_blank">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>Ver en Strava
+          </a>
+        </div>
+        <div class="fd">
+          <div class="mw">
+            <div class="mh"><span class="mh-tit">Mapa · GPS real</span><span class="mh-badge gps">✓ Strava Route Builder</span></div>
+            <div class="map-div" id="map3"></div>
+            <div class="mleg"><div class="li"><div class="ll" style="background:#1B6B47"></div>Trazado GPS</div><div class="li"><div class="lp" style="background:#E8520A;border-color:#E8520A"></div>Salida/Meta</div><div class="li"><div class="lp" style="background:#1B6B47;border-color:#1B6B47"></div>Punto clave</div><div class="li" style="margin-left:auto;color:var(--gl)">© OSM</div></div>
+          </div>
+          <div class="pw">
+            <div class="ph"><span class="ph-tit">Perfil altimétrico · GPS</span><div class="pst"><span><span class="psl">Máx.</span><span class="psv">793 m</span></span><span><span class="psl">↑</span><span class="psv">387 m</span></span><span><span class="psl">D.</span><span class="psv">52,7 km</span></span></div></div>
+            <div class="pc2"><canvas id="p3"></canvas></div>
+            <div class="ptbl"><table>
+              <tr><th>Punto</th><th>Alcalá</th><th>Daganzo</th><th>Ribatejada</th><th>Las Castillas</th><th>Galápagos</th><th>Camarma</th><th>Alcalá</th></tr>
+              <tr><td style="color:var(--gm);font-weight:600">km</td><td class="ori">0</td><td>10</td><td>26</td><td class="dst">24</td><td>32</td><td>49</td><td class="ori">52,7</td></tr>
+              <tr><td style="color:var(--gm);font-weight:600">m</td><td class="ori">594</td><td>660</td><td>765</td><td class="dst">793</td><td>739</td><td>651</td><td class="ori">594</td></tr>
+            </table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ M4 GPS ══ -->
+    <div class="ficha" id="m4">
+      <div class="fh">
+        <div class="fn">4</div>
+        <div class="ft"><h2>Vuelta a Quer</h2><p>Alcalá → Camarma → Torrejón del Rey → Quer → Alovera → Guadalajara → Valdeaveruelo → Camarma → Alcalá</p></div>
+        <div class="fbadge gps">GPS real · Strava</div>
+      </div>
+      <div class="fb">
+        <div class="fi">
+          <div>
+            <div class="dt"><span class="dl">Distancia GPS</span><span class="dv g">58,1 km</span></div>
+            <div class="dt"><span class="dl">Desnivel +</span><span class="dv g">435 m <span class="gpsbadge">GPS</span></span></div>
+            <div class="dt"><span class="dl">Altitud máxima</span><span class="dv">800 m</span></div>
+            <div class="dt"><span class="dl">Terreno</span><span class="dv">100% asfalto</span></div>
+            <div class="dt"><span class="dl">Provincias</span><span class="dv">M · GU · M</span></div>
+            <div class="dt"><span class="dl">Dificultad</span><span class="bm">Medio</span></div>
+          </div>
+          <div><div class="sh">Tiempo estimado</div><div class="tg">
+            <div class="tc"><div class="tG">A</div><div class="tv">30 km/h</div><div class="tt">1h 56m</div></div>
+            <div class="tc"><div class="tG">B</div><div class="tv">27 km/h</div><div class="tt">2h 09m</div></div>
+            <div class="tc"><div class="tG">C</div><div class="tv">24 km/h</div><div class="tt">2h 25m</div></div>
+            <div class="tc"><div class="tG">D</div><div class="tv">22 km/h</div><div class="tt">2h 38m</div></div>
+          </div></div>
+          <div><div class="sh">Reagrupamientos</div>
+            <div class="pr"><div class="pc">1</div><div class="pn">Camarma de Esteruelas</div><div class="pk">km ~7</div></div>
+            <div class="pr"><div class="pc">2</div><div class="pn">Quer</div><div class="pk">km ~30</div></div>
+            <div class="pr"><div class="pc">3</div><div class="pn">Valdeaveruelo</div><div class="pk">km ~38</div></div>
+          </div>
+          <div><div class="sh">Atención</div>
+            <div class="ai"><span>⚠</span>Subida a Valdeaveruelo (800 m) — el punto más alto</div>
+            <div class="ai"><span>⚠</span>Zona Quer–Alovera: travesía por polígono</div>
+          </div>
+          <a class="sbtn" style="background:#FC4C02" href="https://www.strava.com/routes/3505495877661330254" target="_blank">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>Ver en Strava
+          </a>
+        </div>
+        <div class="fd">
+          <div class="mw">
+            <div class="mh"><span class="mh-tit">Mapa · GPS real</span><span class="mh-badge gps">✓ Strava Route Builder</span></div>
+            <div class="map-div" id="map4"></div>
+            <div class="mleg"><div class="li"><div class="ll" style="background:#1B6B47"></div>Trazado GPS</div><div class="li"><div class="lp" style="background:#E8520A;border-color:#E8520A"></div>Salida/Meta</div><div class="li"><div class="lp" style="background:#1B6B47;border-color:#1B6B47"></div>Punto clave</div><div class="li" style="margin-left:auto;color:var(--gl)">© OSM</div></div>
+          </div>
+          <div class="pw">
+            <div class="ph"><span class="ph-tit">Perfil altimétrico · GPS</span><div class="pst"><span><span class="psl">Máx.</span><span class="psv">800 m</span></span><span><span class="psl">↑</span><span class="psv">435 m</span></span><span><span class="psl">D.</span><span class="psv">58,1 km</span></span></div></div>
+            <div class="pc2"><canvas id="p4"></canvas></div>
+            <div class="ptbl"><table>
+              <tr><th>Punto</th><th>Alcalá</th><th>Camarma</th><th>T.Rey</th><th>Quer</th><th>Valdeaveruelo</th><th>Camarma</th><th>Alcalá</th></tr>
+              <tr><td style="color:var(--gm);font-weight:600">km</td><td class="ori">0</td><td>7</td><td>16</td><td>30</td><td class="dst">38</td><td>52</td><td class="ori">58,1</td></tr>
+              <tr><td style="color:var(--gm);font-weight:600">m</td><td class="ori">595</td><td>634</td><td>665</td><td>700</td><td class="dst">800</td><td>634</td><td class="ori">595</td></tr>
+            </table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ M5 PENDIENTE GPX ══ -->
+    <div class="ficha" id="m5">
+      <div class="fh">
+        <div class="fn">5</div>
+        <div class="ft"><h2>Ribatejada Grande</h2><p>Alcalá → Meco → Azuqueca → Villanueva de la Torre → Valdeavero → Ribatejada → Fresno de Torote → Daganzo → Alcalá</p></div>
+        <div class="fbadge croquis">Pendiente GPX</div>
+      </div>
+      <div class="fb">
+        <div class="fi">
+          <div>
+            <div class="dt"><span class="dl">Distancia estimada</span><span class="dv">~56 km <span class="crobadge">histórico</span></span></div>
+            <div class="dt"><span class="dl">Desnivel +</span><span class="dv">~420 m <span class="crobadge">estimado</span></span></div>
+            <div class="dt"><span class="dl">Altitud máxima</span><span class="dv">~780 m</span></div>
+            <div class="dt"><span class="dl">Terreno</span><span class="dv">100% asfalto</span></div>
+            <div class="dt"><span class="dl">Provincias</span><span class="dv">M · GU · M</span></div>
+            <div class="dt"><span class="dl">Dificultad</span><span class="bm">Medio</span></div>
+          </div>
+          <div><div class="sh">Tiempo estimado</div><div class="tg">
+            <div class="tc"><div class="tG">A</div><div class="tv">30 km/h</div><div class="tt">1h 52m</div></div>
+            <div class="tc"><div class="tG">B</div><div class="tv">27 km/h</div><div class="tt">2h 04m</div></div>
+            <div class="tc"><div class="tG">C</div><div class="tv">24 km/h</div><div class="tt">2h 20m</div></div>
+            <div class="tc"><div class="tG">D</div><div class="tv">22 km/h</div><div class="tt">2h 33m</div></div>
+          </div></div>
+          <div><div class="sh">Reagrupamientos</div>
+            <div class="pr"><div class="pc">1</div><div class="pn">Azuqueca de Henares</div><div class="pk">km ~8</div></div>
+            <div class="pr"><div class="pc">2</div><div class="pn">Ribatejada</div><div class="pk">km ~28</div></div>
+            <div class="pr"><div class="pc">3</div><div class="pn">Daganzo de Arriba</div><div class="pk">km ~48</div></div>
+          </div>
+          <div><div class="sh">Atención</div>
+            <div class="ai"><span>⚠</span>Múltiples cambios de provincia — seguir señalización</div>
+            <div class="ai"><span>⚠</span>Descenso desde Ribatejada al río Torote: rápido</div>
+          </div>
+          <a class="sbtn" style="background:#FC4C02;opacity:.5;cursor:default">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>Strava · pendiente de crear
+          </a>
+        </div>
+        <div class="fd">
+          <div style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:40px 20px;background:var(--fd);border-radius:10px;border:1px dashed var(--gl);color:var(--gm);text-align:center">
+            <span style="font-size:28px">🗺️</span>
+            <span style="font-size:13px;font-weight:600">Mapa y perfil pendientes de GPX</span>
+            <span style="font-size:11px;line-height:1.5">Crea la ruta en Strava Route Builder,<br>exporta el GPX y súbelo para activar esta ficha.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="pie">
+  <span>Fuente histórica: Peña Ciclista Rodríguez Magro · Alcalá de Henares · años 1980s</span>
+  <span>GPS: Strava Route Builder · Cartografía: © OpenStreetMap contributors</span>
+</div>
+
+
+
+<script>
+// ══ GPS DATA M1 ══
+const TRACK_m1 = [[40.48886,-3.37459],[40.48896,-3.37428],[40.48852,-3.37261],[40.48824,-3.3717],[40.48794,-3.37051],[40.48714,-3.368425],[40.48729,-3.36659],[40.488103,-3.364603],[40.48916,-3.36354],[40.4906,-3.36451],[40.49267,-3.36372],[40.49526,-3.36266],[40.49699,-3.35606],[40.49829,-3.35339],[40.50415,-3.35191],[40.51407,-3.3514],[40.51753,-3.34878],[40.52496,-3.34301],[40.52826,-3.34171],[40.53362,-3.33659],[40.53988,-3.3349],[40.54129,-3.3347],[40.54642,-3.33938],[40.54868,-3.33962],[40.55175,-3.33948],[40.55105,-3.34506],[40.549433,-3.34981],[40.54839,-3.36131],[40.54832,-3.36929],[40.54934,-3.38043],[40.55233,-3.37969],[40.557384,-3.377046],[40.564072,-3.373649],[40.571283,-3.369954],[40.580479,-3.365923],[40.59334,-3.36151],[40.603294,-3.357613],[40.6072,-3.35544],[40.614282,-3.350511],[40.61898,-3.34724],[40.628324,-3.340236],[40.63358,-3.33666],[40.64297,-3.33825],[40.651942,-3.339033],[40.662456,-3.340392],[40.66689,-3.34377],[40.6678,-3.35146],[40.67198,-3.3494],[40.676572,-3.347674],[40.68439,-3.34481],[40.68836,-3.34466],[40.6924,-3.34196],[40.6952,-3.33868],[40.6952,-3.33868],[40.6924,-3.34196],[40.68439,-3.34481],[40.68049,-3.3475],[40.676572,-3.347674],[40.67198,-3.3494],[40.66866,-3.35262],[40.660668,-3.340156],[40.652809,-3.339144],[40.6452,-3.33842],[40.63244,-3.33719],[40.626928,-3.341332],[40.61743,-3.34832],[40.610348,-3.353249],[40.60638,-3.35599],[40.599884,-3.35925],[40.59334,-3.36151],[40.585624,-3.364158],[40.57609,-3.36749],[40.566476,-3.372417],[40.55955,-3.375943],[40.5549,-3.37832],[40.55066,-3.38105],[40.54518,-3.38101],[40.534387,-3.381457],[40.52446,-3.3816],[40.51324,-3.37945],[40.506747,-3.378255],[40.49987,-3.37852],[40.49367,-3.37779],[40.4915,-3.37769],[40.4904,-3.37607],[40.48886,-3.37481]];
+const PERF_m1 = {l:[0,1.2,2.3,3.5,4.6,5.8,7,8.1,9.3,10.4,11.6,12.8,13.9,15.1,16.3,17.4,18.6,19.7,20.9,22.1,23.2,24.4,25.5,26.7,27.9,29,30.2,31.3,32.5,33.7,34.8,36,37.2,38.3,39.5,40.6,41.8,43,44.1,45.3,46.4,47.6,48.8,49.9,51.1,52.2,53.4,54.6,55.7,56.9],a:[594,589,594,599,611,615,629,634,664,667,680,639,647,655,663,670,675,685,690,698,705,711,718,724,708,714,723,738,734,719,715,723,722,715,708,700,695,685,681,673,666,658,651,644,631,624,617,607,605,593],mn:565,mx:758};
+
+// ══ GPS DATA M2 ══
+const TRACK_m2 = [[40.48918,-3.37476],[40.48985,-3.37542],[40.49007,-3.37561],[40.49188,-3.37692],[40.49289,-3.37739],[40.49305,-3.37713],[40.49402,-3.37464],[40.49395,-3.37432],[40.49419,-3.37424],[40.49505,-3.3721],[40.49568,-3.37047],[40.49583,-3.36979],[40.495605,-3.368827],[40.49478,-3.36639],[40.49467,-3.3662],[40.49459,-3.36547],[40.4948,-3.36434],[40.49534,-3.3629],[40.49528,-3.36254],[40.49558,-3.36219],[40.49589,-3.36086],[40.49603,-3.36054],[40.49639,-3.3589],[40.49682,-3.35712],[40.49705,-3.35515],[40.49701,-3.35484],[40.49697,-3.35439],[40.4971,-3.35415],[40.49771,-3.35396],[40.49927,-3.35239],[40.50076,-3.35095],[40.5014,-3.35058],[40.5017,-3.35027],[40.50196,-3.35029],[40.50211,-3.35068],[40.50353,-3.35161],[40.50427,-3.35183],[40.50458,-3.35203],[40.50499,-3.35237],[40.50635,-3.35233],[40.50668,-3.35199],[40.50745,-3.35186],[40.50802,-3.35217],[40.50947,-3.35203],[40.511063,-3.35187],[40.51323,-3.351545],[40.51439,-3.35109],[40.51449,-3.35074],[40.51483,-3.35066],[40.51517,-3.35077],[40.516817,-3.349407],[40.518997,-3.347713],[40.52057,-3.34633],[40.52208,-3.34451],[40.523,-3.34383],[40.52446,-3.34329],[40.52576,-3.34257],[40.5278,-3.34176],[40.52944,-3.34165],[40.53049,-3.34121],[40.53136,-3.34017],[40.53195,-3.33849],[40.5325,-3.33742],[40.5333,-3.33673],[40.53496,-3.336217],[40.537297,-3.335587],[40.539797,-3.334922],[40.54083,-3.33448],[40.54105,-3.33428],[40.54154,-3.33456],[40.543662,-3.334343],[40.54483,-3.33407],[40.54517,-3.332897],[40.54579,-3.33026],[40.54675,-3.3279],[40.54677,-3.32749],[40.54702,-3.32731],[40.548258,-3.3247],[40.549127,-3.322507],[40.54978,-3.32035],[40.5498,-3.32004],[40.5502,-3.31963],[40.55114,-3.31946],[40.55108,-3.318265],[40.55095,-3.31667],[40.55148,-3.31495],[40.55215,-3.31368],[40.553,-3.31223],[40.554657,-3.310003],[40.55617,-3.30817],[40.55761,-3.30604],[40.55894,-3.3037],[40.56022,-3.30147],[40.56141,-3.3002],[40.56247,-3.29815],[40.56344,-3.29618],[40.5649,-3.29489],[40.56626,-3.29339],[40.56645,-3.29257],[40.565874,-3.290224],[40.56504,-3.28705],[40.565018,-3.284934],[40.565,-3.28197],[40.56486,-3.28167],[40.56503,-3.28138],[40.565713,-3.280883],[40.56742,-3.27923],[40.56921,-3.277363],[40.571175,-3.275375],[40.57203,-3.27448],[40.57222,-3.27427],[40.57231,-3.27457],[40.573183,-3.276483],[40.574568,-3.279278],[40.57533,-3.28062],[40.57567,-3.2806],[40.577087,-3.279613],[40.579133,-3.278217],[40.58085,-3.27694],[40.582145,-3.27578],[40.583768,-3.274112],[40.58558,-3.27221],[40.58589,-3.2716],[40.58607,-3.27134],[40.58634,-3.27144],[40.58723,-3.27136],[40.58839,-3.27056],[40.590183,-3.268828],[40.59148,-3.26723],[40.59212,-3.26554],[40.59283,-3.26459],[40.59425,-3.26325],[40.59469,-3.26223],[40.59498,-3.26081],[40.59548,-3.25971],[40.59642,-3.25876],[40.59787,-3.2582],[40.5982,-3.25792],[40.59857,-3.25783],[40.59865,-3.25819],[40.59846,-3.25842],[40.59821,-3.25859],[40.59833,-3.25964],[40.59806,-3.26159],[40.598245,-3.262835],[40.59921,-3.2645],[40.60071,-3.2663],[40.60162,-3.26783],[40.60322,-3.2692],[40.60419,-3.27049],[40.60455,-3.27074],[40.60494,-3.27073],[40.60504,-3.2711],[40.60497,-3.27176],[40.60524,-3.2724],[40.60575,-3.2737],[40.60624,-3.27436],[40.60656,-3.27511],[40.60671,-3.27531],[40.60697,-3.27645],[40.60738,-3.27706],[40.6079,-3.27699],[40.60885,-3.27645],[40.60948,-3.27672],[40.61065,-3.27692],[40.6108,-3.27684],[40.61091,-3.27705],[40.613413,-3.277687],[40.615917,-3.278323],[40.61842,-3.27896],[40.61856,-3.27883],[40.61866,-3.27902],[40.620925,-3.279597],[40.62293,-3.280357],[40.62412,-3.28087],[40.62434,-3.28092],[40.62592,-3.281834],[40.62829,-3.282996],[40.63015,-3.28385],[40.63087,-3.28383],[40.6319,-3.28309],[40.63321,-3.28284],[40.6335,-3.283915],[40.633115,-3.28682],[40.63305,-3.28852],[40.63358,-3.29085],[40.634223,-3.29204],[40.63524,-3.29374],[40.63525,-3.29462],[40.634375,-3.29557],[40.63328,-3.29691],[40.63284,-3.29814],[40.633217,-3.299463],[40.63395,-3.30172],[40.63418,-3.3039],[40.6344,-3.30505],[40.63427,-3.30689],[40.63436,-3.30838],[40.63476,-3.30976],[40.63531,-3.31063],[40.63566,-3.31058],[40.63601,-3.31075],[40.63601,-3.31127],[40.6362,-3.312],[40.63663,-3.31272],[40.63759,-3.31407],[40.638953,-3.31573],[40.63973,-3.317],[40.64158,-3.319365],[40.64343,-3.32173],[40.64367,-3.32254],[40.643814,-3.326056],[40.64399,-3.32894],[40.64482,-3.332],[40.64531,-3.3336],[40.64614,-3.33498],[40.64627,-3.336375],[40.64644,-3.3381],[40.64661,-3.33836],[40.6452,-3.33842],[40.64297,-3.33825],[40.64178,-3.3381],[40.64147,-3.3382],[40.64129,-3.33806],[40.639809,-3.337715],[40.637225,-3.33728],[40.634641,-3.336845],[40.63296,-3.33685],[40.63268,-3.33714],[40.63244,-3.33719],[40.63098,-3.338173],[40.629022,-3.339688],[40.626928,-3.341332],[40.62508,-3.3428],[40.62347,-3.34406],[40.62134,-3.34557],[40.61957,-3.346815],[40.61743,-3.34832],[40.615069,-3.349963],[40.612709,-3.351606],[40.610348,-3.353249],[40.607987,-3.354892],[40.60638,-3.35599],[40.604066,-3.357207],[40.601751,-3.358424],[40.599884,-3.35925],[40.597556,-3.36006],[40.59564,-3.36079],[40.59334,-3.36151],[40.590768,-3.362393],[40.588196,-3.363276],[40.585624,-3.364158],[40.583052,-3.365041],[40.580479,-3.365923],[40.577907,-3.366806],[40.57609,-3.36749],[40.573687,-3.368722],[40.571283,-3.369954],[40.568879,-3.371186],[40.566476,-3.372417],[40.564072,-3.373649],[40.56174,-3.374838],[40.55955,-3.375943],[40.557293,-3.37709],[40.5549,-3.37832],[40.553765,-3.37895],[40.55209,-3.37988],[40.55066,-3.38105],[40.54984,-3.38152],[40.54963,-3.38171],[40.54917,-3.38159],[40.54761,-3.38146],[40.54518,-3.38101],[40.54283,-3.3809],[40.54222,-3.38117],[40.54157,-3.38097],[40.539283,-3.381135],[40.536867,-3.381297],[40.534387,-3.381457],[40.531907,-3.381617],[40.53036,-3.38182],[40.53008,-3.38212],[40.52979,-3.3819],[40.528377,-3.38185],[40.52656,-3.38192],[40.52446,-3.3816],[40.522357,-3.381383],[40.52034,-3.381055],[40.51817,-3.380577],[40.515618,-3.37999],[40.51324,-3.37945],[40.51281,-3.37928],[40.51254,-3.37935],[40.51219,-3.37922],[40.510868,-3.378902],[40.50822,-3.37828],[40.506747,-3.378255],[40.504427,-3.37836],[40.502143,-3.378467],[40.49987,-3.37852],[40.49922,-3.37867],[40.49901,-3.3785],[40.49795,-3.37783],[40.49723,-3.37761],[40.4967,-3.3776],[40.49477,-3.37765],[40.49367,-3.37779],[40.493,-3.37769],[40.49275,-3.37772],[40.4915,-3.37769],[40.49135,-3.37774],[40.49127,-3.37759],[40.4904,-3.37607],[40.48991,-3.37585],[40.48978,-3.37565]];
+const PERF_m2 = {l:[0,0.54,1.06,1.59,2.25,2.79,3.19,3.61,4.38,5.45,6.43,7.47,8.09,9.07,9.61,10.77,12.01,13.1,13.99,14.63,15.72,16.31,17.3,17.87,18.3,19.27,19.62,19.96,20.77,21.7,22.59,23.39,24.02,24.91,25.23,26.37,27.58,28.13,29.11,30.29,31.94,33.48,35.14,36.8,38.47,39.17,40.27,41.32,42.62,43.44,44.74,45.36,45.75],a:[594,603,605,602,594,596,600,608,611,618,627,634,638,642,642,644,648,636,640,650,656,656,659,658,665,697,707,713,727,747,763,775,800,756,740,743,722,712,707,698,688,680,670,660,648,644,632,625,617,609,606,597,595],mn:570,mx:820};
+
+// ══ GPS DATA M3 ══
+const TRACK_m3 = [[40.48911,-3.37451],[40.48918,-3.37476],[40.48962,-3.3752],[40.49,-3.3755],[40.49036,-3.37594],[40.49188,-3.37692],[40.49281,-3.37734],[40.49298,-3.37739],[40.49332,-3.37756],[40.49365,-3.3777],[40.4937,-3.37767],[40.4943,-3.377675],[40.495585,-3.377615],[40.49649,-3.37755],[40.49659,-3.37739],[40.49668,-3.37725],[40.49682,-3.37729],[40.497,-3.37756],[40.49773,-3.37774],[40.49823,-3.37797],[40.49906,-3.37826],[40.49923,-3.37818],[40.49935,-3.37828],[40.49946,-3.37846],[40.50011,-3.378515],[40.501407,-3.378503],[40.50288,-3.37843],[40.504427,-3.37836],[40.505973,-3.37829],[40.50752,-3.37822],[40.50822,-3.37828],[40.509985,-3.378695],[40.51175,-3.37911],[40.51217,-3.37904],[40.5123,-3.37882],[40.51253,-3.37863],[40.51278,-3.37881],[40.51306,-3.3794],[40.514033,-3.37963],[40.515618,-3.37999],[40.51729,-3.380373],[40.51905,-3.38078],[40.52034,-3.381055],[40.52163,-3.38132],[40.523083,-3.381447],[40.52446,-3.3816],[40.5259,-3.38185],[40.52699,-3.38193],[40.528377,-3.38185],[40.52967,-3.38172],[40.52985,-3.38148],[40.53004,-3.38137],[40.53023,-3.38147],[40.53044,-3.38165],[40.531915,-3.381617],[40.533585,-3.38151],[40.535255,-3.381403],[40.53608,-3.38135],[40.537707,-3.381243],[40.539283,-3.381135],[40.540808,-3.381025],[40.5419,-3.38091],[40.54213,-3.3808],[40.54224,-3.38073],[40.54235,-3.38077],[40.54252,-3.3809],[40.54371,-3.38084],[40.54518,-3.38101],[40.5468,-3.38131],[40.54842,-3.38161],[40.54917,-3.38159],[40.54952,-3.38142],[40.54962,-3.38127],[40.5498,-3.38132],[40.55013,-3.38132],[40.55106,-3.38076],[40.55233,-3.37969],[40.55314,-3.37918],[40.55446,-3.37854],[40.555266,-3.378144],[40.556678,-3.377412],[40.55809,-3.37668],[40.55955,-3.375943],[40.56101,-3.375207],[40.56247,-3.37447],[40.564072,-3.373649],[40.565675,-3.372828],[40.567277,-3.372007],[40.568879,-3.371186],[40.570482,-3.370364],[40.572084,-3.369543],[40.573687,-3.368722],[40.575289,-3.367901],[40.57657,-3.367295],[40.577907,-3.366806],[40.579622,-3.366218],[40.581337,-3.365629],[40.583052,-3.365041],[40.584766,-3.364452],[40.586481,-3.363864],[40.588196,-3.363276],[40.589911,-3.362687],[40.591625,-3.362099],[40.59334,-3.36151],[40.594517,-3.36109],[40.59573,-3.36067],[40.59678,-3.36033],[40.598332,-3.35979],[40.599884,-3.35925],[40.60098,-3.35883],[40.602523,-3.358019],[40.604066,-3.357207],[40.605609,-3.356396],[40.60679,-3.355715],[40.607987,-3.354892],[40.609561,-3.353797],[40.611135,-3.352702],[40.612709,-3.351606],[40.614282,-3.350511],[40.615856,-3.349416],[40.61743,-3.34832],[40.61898,-3.34724],[40.62016,-3.34639],[40.62134,-3.34557],[40.62274,-3.34464],[40.6242,-3.34348],[40.62508,-3.3428],[40.62623,-3.34188],[40.627626,-3.340784],[40.629022,-3.339688],[40.63035,-3.338657],[40.63161,-3.33769],[40.63233,-3.33698],[40.63246,-3.33671],[40.63267,-3.33675],[40.63287,-3.33678],[40.63358,-3.33666],[40.63497,-3.33689],[40.636599,-3.337167],[40.638227,-3.337444],[40.639856,-3.337721],[40.6409,-3.33785],[40.64136,-3.33789],[40.64152,-3.3378],[40.64189,-3.338],[40.64252,-3.338175],[40.643713,-3.338307],[40.6452,-3.33842],[40.64632,-3.33833],[40.64657,-3.33828],[40.64677,-3.33837],[40.64786,-3.3385],[40.64836,-3.33849],[40.64851,-3.33837],[40.64866,-3.33834],[40.64878,-3.33843],[40.64934,-3.3387],[40.651075,-3.338922],[40.652809,-3.339144],[40.654544,-3.339365],[40.656278,-3.339587],[40.658013,-3.339809],[40.659774,-3.340038],[40.661562,-3.340274],[40.66335,-3.34051],[40.66383,-3.34071],[40.664538,-3.341402],[40.665714,-3.342586],[40.66689,-3.34377],[40.66736,-3.34458],[40.66752,-3.34531],[40.66749,-3.34632],[40.66725,-3.34762],[40.66717,-3.34851],[40.66726,-3.34954],[40.66759,-3.35088],[40.668095,-3.35209],[40.6688,-3.35352],[40.669633,-3.354623],[40.67088,-3.35623],[40.672127,-3.357837],[40.673373,-3.359443],[40.67462,-3.36105],[40.675832,-3.362622],[40.677044,-3.364194],[40.67829,-3.36578],[40.67934,-3.36711],[40.68016,-3.36818],[40.68065,-3.36891],[40.68078,-3.36941],[40.680907,-3.370977],[40.681,-3.37267],[40.68111,-3.37305],[40.682177,-3.374143],[40.68277,-3.37476],[40.68287,-3.37514],[40.68265,-3.37617],[40.68274,-3.37658],[40.683353,-3.37816],[40.68386,-3.37949],[40.68411,-3.38017],[40.68408,-3.381],[40.68365,-3.38312],[40.68355,-3.383],[40.68326,-3.38286],[40.68206,-3.38343],[40.68176,-3.38361],[40.681085,-3.384405],[40.6804,-3.38525],[40.67977,-3.3856],[40.67892,-3.38571],[40.67787,-3.38636],[40.67738,-3.38659],[40.67643,-3.38667],[40.67594,-3.38689],[40.67474,-3.387823],[40.673275,-3.38854],[40.671545,-3.38904],[40.670205,-3.38944],[40.6691,-3.38981],[40.667475,-3.390445],[40.66585,-3.39108],[40.66441,-3.39143],[40.66363,-3.39129],[40.662565,-3.390955],[40.66185,-3.3908],[40.660802,-3.39109],[40.659105,-3.39163],[40.657409,-3.39217],[40.655713,-3.39271],[40.654016,-3.39325],[40.65232,-3.39379],[40.650649,-3.394029],[40.649086,-3.394266],[40.647523,-3.394503],[40.64596,-3.39474],[40.64506,-3.394877],[40.64328,-3.39515],[40.64275,-3.39531],[40.641584,-3.395682],[40.640092,-3.396106],[40.6386,-3.39653],[40.638,-3.39663],[40.63654,-3.39705],[40.63508,-3.39747],[40.633835,-3.397855],[40.63227,-3.39833],[40.63119,-3.39879],[40.629754,-3.399426],[40.628318,-3.400062],[40.62732,-3.40057],[40.62708,-3.40079],[40.62692,-3.40077],[40.625676,-3.401248],[40.624029,-3.401984],[40.622382,-3.402719],[40.620734,-3.403455],[40.619087,-3.404191],[40.617439,-3.404926],[40.615792,-3.405662],[40.614145,-3.406397],[40.612497,-3.407133],[40.61085,-3.407868],[40.609202,-3.408604],[40.607555,-3.409339],[40.605907,-3.410075],[40.60426,-3.41081],[40.60397,-3.41087],[40.602365,-3.41095],[40.60076,-3.41103],[40.598983,-3.411317],[40.597207,-3.411603],[40.59543,-3.41189],[40.594695,-3.41181],[40.59382,-3.4117],[40.59338,-3.41182],[40.59231,-3.41235],[40.5914,-3.41284],[40.590455,-3.413605],[40.589025,-3.414875],[40.58808,-3.41568],[40.58714,-3.415845],[40.585488,-3.416095],[40.583803,-3.416325],[40.5825,-3.41659],[40.58207,-3.41689],[40.580836,-3.418233],[40.579601,-3.419576],[40.578367,-3.420919],[40.577067,-3.422341],[40.575701,-3.423844],[40.574335,-3.425347],[40.572968,-3.426849],[40.571602,-3.428352],[40.570236,-3.429854],[40.568869,-3.431357],[40.567503,-3.432859],[40.566327,-3.434147],[40.56534,-3.43522],[40.56483,-3.43568],[40.563211,-3.436473],[40.561593,-3.437267],[40.559974,-3.43806],[40.558355,-3.438854],[40.556737,-3.439647],[40.555118,-3.44044],[40.553499,-3.441233],[40.55218,-3.44194],[40.551337,-3.44278],[40.55037,-3.44378],[40.55007,-3.44417],[40.54917,-3.44595],[40.54827,-3.44773],[40.54737,-3.44951],[40.54647,-3.45129],[40.545535,-3.45315],[40.544565,-3.45509],[40.54393,-3.45643],[40.5434,-3.45803],[40.54331,-3.45836],[40.5433,-3.4586],[40.54318,-3.45868],[40.54302,-3.45861],[40.54298,-3.45839],[40.54308,-3.45824],[40.542385,-3.456095],[40.54169,-3.45395],[40.54141,-3.45358],[40.54142,-3.45333],[40.54116,-3.45229],[40.54074,-3.45025],[40.540318,-3.448167],[40.539893,-3.446042],[40.53949,-3.44421],[40.53873,-3.44259],[40.5385,-3.44192],[40.53817,-3.44003],[40.53791,-3.438263],[40.53766,-3.436665],[40.53738,-3.43507],[40.53722,-3.43461],[40.53642,-3.43335],[40.53552,-3.431943],[40.534549,-3.430287],[40.533506,-3.428382],[40.532464,-3.426477],[40.531421,-3.424572],[40.5307,-3.42328],[40.53032,-3.4228],[40.53,-3.42262],[40.529215,-3.422405],[40.52852,-3.42221],[40.52778,-3.42173],[40.5269,-3.42118],[40.5263,-3.42099],[40.52538,-3.42093],[40.52496,-3.42084],[40.52448,-3.42037],[40.52428,-3.41971],[40.52428,-3.41935],[40.52431,-3.41907],[40.52444,-3.41847],[40.5245,-3.41732],[40.52431,-3.41646],[40.52401,-3.41572],[40.52335,-3.41463],[40.522735,-3.413865],[40.5218,-3.4129],[40.52038,-3.411588],[40.51896,-3.410276],[40.517638,-3.409084],[40.516414,-3.408012],[40.51519,-3.40694],[40.51369,-3.40582],[40.51219,-3.4047],[40.5108,-3.40381],[40.509627,-3.40309],[40.50856,-3.40231],[40.50713,-3.401287],[40.5057,-3.400263],[40.50427,-3.39924],[40.50297,-3.39839],[40.50244,-3.39834],[40.5021,-3.39858],[40.50165,-3.39881],[40.50118,-3.39859],[40.500905,-3.39756],[40.50061,-3.39653],[40.50017,-3.39633],[40.50001,-3.39603],[40.50003,-3.39574],[40.50006,-3.39539],[40.4999,-3.39502],[40.4993,-3.39385],[40.4992,-3.39372],[40.49914,-3.39347],[40.49853,-3.39212],[40.49791,-3.39034],[40.49772,-3.39022],[40.49757,-3.39008],[40.49753,-3.38983],[40.49763,-3.38962],[40.49734,-3.38868],[40.49685,-3.38735],[40.49596,-3.38572],[40.49505,-3.38418],[40.494197,-3.38263],[40.49341,-3.38125],[40.49327,-3.38111],[40.49311,-3.38117],[40.49288,-3.38091],[40.49289,-3.38063],[40.49277,-3.38017],[40.49208,-3.37898],[40.49151,-3.37796],[40.49139,-3.37777],[40.49133,-3.37771],[40.49127,-3.37759],[40.49082,-3.37675],[40.49014,-3.37589],[40.48991,-3.37585],[40.48979,-3.37574],[40.48981,-3.37553],[40.48916,-3.37495]];
+const PERF_m3 = {l:[0,0.53,0.92,1.3,2.6,3.23,4.46,5.23,6.02,6.83,7.68,9.14,10.6,12.11,13.41,14.89,16.19,16.94,17.87,18.59,19.47,20.7,21.42,22.84,23.72,24.4,25.0,25.84,27.05,28.4,29.58,30.77,31.83,33.37,34.74,35.62,36.78,38.36,39.68,40.85,41.92,42.41,43.59,44.7,45.55,46.0,46.77,48.16,49.12,49.5,50.01,50.89,51.25],a:[594,597,600,603,610,617,624,628,635,644,649,660,669,676,684,695,701,709,712,716,722,723,708,734,765,793,784,765,738,728,711,702,690,681,658,658,660,678,682,680,663,662,657,629,632,643,624,614,607,606,602,600,595],mn:570,mx:820};
+
+// ══ GPS DATA M4 ══
+const TRACK_m4 = [[40.49014,-3.37569],[40.49188,-3.37692],[40.49289,-3.37739],[40.49332,-3.37756],[40.49365,-3.37768],[40.4943,-3.377675],[40.4964,-3.37758],[40.49659,-3.37739],[40.49674,-3.37725],[40.497,-3.37756],[40.49795,-3.37783],[40.49906,-3.37826],[40.4993,-3.37822],[40.49946,-3.37846],[40.50067,-3.37854],[40.50288,-3.37843],[40.5052,-3.378325],[40.50752,-3.37822],[40.509103,-3.378487],[40.51175,-3.37911],[40.51227,-3.37894],[40.51253,-3.37863],[40.51289,-3.37911],[40.51388,-3.379595],[40.51578,-3.380027],[40.51817,-3.380577],[40.52034,-3.381055],[40.522357,-3.381383],[40.52446,-3.3816],[40.52656,-3.38192],[40.528377,-3.38185],[40.52979,-3.38159],[40.53004,-3.38137],[40.53028,-3.38156],[40.531907,-3.381617],[40.534387,-3.381457],[40.536867,-3.381297],[40.539283,-3.381135],[40.54157,-3.38097],[40.54213,-3.3808],[40.5423,-3.38073],[40.54252,-3.3809],[40.54437,-3.38086],[40.5468,-3.38131],[40.54874,-3.38164],[40.54952,-3.38142],[40.5497,-3.38126],[40.55013,-3.38132],[40.551695,-3.380225],[40.55314,-3.37918],[40.55456,-3.37851],[40.556678,-3.377412],[40.55882,-3.376312],[40.56101,-3.375207],[40.563248,-3.37407],[40.56558,-3.37287],[40.567188,-3.372042],[40.569616,-3.370801],[40.572044,-3.369559],[40.574472,-3.368318],[40.57657,-3.367295],[40.578765,-3.366512],[40.581337,-3.365629],[40.583909,-3.364747],[40.586481,-3.363864],[40.589053,-3.362981],[40.591625,-3.362099],[40.59391,-3.3613],[40.59573,-3.36067],[40.597556,-3.36006],[40.599884,-3.35925],[40.601751,-3.358424],[40.604066,-3.357207],[40.60638,-3.35599],[40.607987,-3.354892],[40.610348,-3.353249],[40.612709,-3.351606],[40.615069,-3.349963],[40.61743,-3.34832],[40.61957,-3.346815],[40.62134,-3.34557],[40.62347,-3.34406],[40.62508,-3.3428],[40.626928,-3.341332],[40.629022,-3.339688],[40.63071,-3.33839],[40.63056,-3.33812],[40.630225,-3.336125],[40.62972,-3.333445],[40.629215,-3.331185],[40.62876,-3.3298],[40.627925,-3.32862],[40.626965,-3.326965],[40.62571,-3.32512],[40.6245,-3.32501],[40.62313,-3.32501],[40.62216,-3.32532],[40.62067,-3.32451],[40.61996,-3.32512],[40.61983,-3.32565],[40.61979,-3.32636],[40.61947,-3.32654],[40.61883,-3.3261],[40.61708,-3.325125],[40.614849,-3.323956],[40.612416,-3.322682],[40.609982,-3.321409],[40.607536,-3.32013],[40.605064,-3.31884],[40.602592,-3.31755],[40.60012,-3.31626],[40.5981,-3.3155],[40.59623,-3.314087],[40.594222,-3.31267],[40.59226,-3.31144],[40.59161,-3.31156],[40.59108,-3.31125],[40.589438,-3.308992],[40.58777,-3.30697],[40.58744,-3.3065],[40.58734,-3.30624],[40.58676,-3.30462],[40.58565,-3.30336],[40.58535,-3.30316],[40.58531,-3.30296],[40.58464,-3.30105],[40.5841,-3.29888],[40.58314,-3.29726],[40.58295,-3.29724],[40.58295,-3.29697],[40.58176,-3.29529],[40.58157,-3.29516],[40.5815,-3.29468],[40.58076,-3.29205],[40.57975,-3.289667],[40.57879,-3.2873],[40.57758,-3.2851],[40.57624,-3.282685],[40.57541,-3.2813],[40.57515,-3.28112],[40.57516,-3.28077],[40.5754,-3.28061],[40.5759,-3.2805],[40.577085,-3.27961],[40.579133,-3.278217],[40.58085,-3.27694],[40.582145,-3.27578],[40.583768,-3.274112],[40.58558,-3.27221],[40.58589,-3.2716],[40.58607,-3.27134],[40.58634,-3.27144],[40.58723,-3.27136],[40.58839,-3.27056],[40.590183,-3.268828],[40.59148,-3.26723],[40.59212,-3.26554],[40.59283,-3.26459],[40.59425,-3.26325],[40.59469,-3.26223],[40.59498,-3.26081],[40.59548,-3.25971],[40.59642,-3.25876],[40.59743,-3.25834],[40.5981,-3.25808],[40.59833,-3.25779],[40.59862,-3.25792],[40.59861,-3.25829],[40.59837,-3.25841],[40.59818,-3.25876],[40.59832,-3.25998],[40.59803,-3.26187],[40.59842,-3.26343],[40.59971,-3.2651],[40.60102,-3.26676],[40.602153,-3.268287],[40.60345,-3.26948],[40.60455,-3.27074],[40.60494,-3.27073],[40.60504,-3.2711],[40.60497,-3.27176],[40.60524,-3.2724],[40.60575,-3.2737],[40.60624,-3.27436],[40.60656,-3.27511],[40.60671,-3.27531],[40.60697,-3.27645],[40.60738,-3.27706],[40.6079,-3.27699],[40.60885,-3.27645],[40.60948,-3.27672],[40.61065,-3.27692],[40.6108,-3.27684],[40.61091,-3.27705],[40.613445,-3.277695],[40.61598,-3.27834],[40.61842,-3.27896],[40.61856,-3.27883],[40.61866,-3.27902],[40.620925,-3.279597],[40.62235,-3.28007],[40.62409,-3.28093],[40.62427,-3.28085],[40.62513,-3.281447],[40.6275,-3.282609],[40.62987,-3.28377],[40.63062,-3.28387],[40.63146,-3.28345],[40.63275,-3.28279],[40.63365,-3.28316],[40.6332,-3.28578],[40.63302,-3.28819],[40.633403,-3.290073],[40.63375,-3.29129],[40.63517,-3.29354],[40.6353,-3.29428],[40.63498,-3.2951],[40.63357,-3.29631],[40.63285,-3.29797],[40.63291,-3.29857],[40.63383,-3.30125],[40.63412,-3.30356],[40.6344,-3.3048],[40.63423,-3.30648],[40.63431,-3.30804],[40.63461,-3.30934],[40.63522,-3.31055],[40.63552,-3.31067],[40.63588,-3.31061],[40.63605,-3.31117],[40.63583,-3.31144],[40.63615,-3.31238],[40.63709,-3.31349],[40.63877,-3.315767],[40.640516,-3.318009],[40.642264,-3.320241],[40.64353,-3.32192],[40.643718,-3.323712],[40.643862,-3.327228],[40.644267,-3.32996],[40.644985,-3.33262],[40.6455,-3.33394],[40.6462,-3.33515],[40.64627,-3.33661],[40.64644,-3.3381],[40.64666,-3.33834],[40.64561,-3.33841],[40.643637,-3.338303],[40.64217,-3.33819],[40.64153,-3.3382],[40.64138,-3.33813],[40.64067,-3.33786],[40.638143,-3.337432],[40.635615,-3.337005],[40.63378,-3.3367],[40.63283,-3.33692],[40.63259,-3.33721],[40.63227,-3.33723],[40.63035,-3.338657],[40.628324,-3.340236],[40.62623,-3.34188],[40.62464,-3.34314],[40.62274,-3.34464],[40.62075,-3.34598],[40.61898,-3.34724],[40.616643,-3.348868],[40.614282,-3.350511],[40.611922,-3.352154],[40.609561,-3.353797],[40.6072,-3.35544],[40.605603,-3.356399],[40.603271,-3.357624],[40.60094,-3.35885],[40.599884,-3.35925],[40.597556,-3.36006],[40.59564,-3.36079],[40.59334,-3.36151],[40.590768,-3.362393],[40.588196,-3.363276],[40.585624,-3.364158],[40.583052,-3.365041],[40.580479,-3.365923],[40.577907,-3.366806],[40.57609,-3.36749],[40.573687,-3.368722],[40.571283,-3.369954],[40.568879,-3.371186],[40.566476,-3.372417],[40.564072,-3.373649],[40.56174,-3.374838],[40.55955,-3.375943],[40.557293,-3.37709],[40.5549,-3.37832],[40.553765,-3.37895],[40.55209,-3.37988],[40.55066,-3.38105],[40.54984,-3.38152],[40.54963,-3.38171],[40.54917,-3.38159],[40.54761,-3.38146],[40.54518,-3.38101],[40.54283,-3.3809],[40.54222,-3.38117],[40.54157,-3.38097],[40.539283,-3.381135],[40.536867,-3.381297],[40.534387,-3.381457],[40.531907,-3.381617],[40.53036,-3.38182],[40.53008,-3.38212],[40.52979,-3.3819],[40.528377,-3.38185],[40.52656,-3.38192],[40.52446,-3.3816],[40.522357,-3.381383],[40.52034,-3.381055],[40.51817,-3.380577],[40.515618,-3.37999],[40.51324,-3.37945],[40.51281,-3.37928],[40.51254,-3.37935],[40.51219,-3.37922],[40.510868,-3.378902],[40.50822,-3.37828],[40.506747,-3.378255],[40.504427,-3.37836],[40.502143,-3.378467],[40.49987,-3.37852],[40.49922,-3.37867],[40.49901,-3.3785],[40.49795,-3.37783],[40.49723,-3.37761],[40.4967,-3.3776],[40.49477,-3.37765],[40.49367,-3.37779],[40.493,-3.37769],[40.49275,-3.37772],[40.4915,-3.37769],[40.49135,-3.37774],[40.49127,-3.37759],[40.4904,-3.37607],[40.48991,-3.37585],[40.48978,-3.37565],[40.49,-3.3755],[40.4904,-3.37607]];
+const PERF_m4 = {l:[0,0.73,1.07,2.49,3.55,4.53,5.85,6.7,8.12,9.89,11.82,13.39,15.22,16.46,17.62,18.25,19.62,21.4,22.26,23.07,23.72,24.81,25.83,26.59,27.61,28.08,28.74,29.47,29.97,30.48,31.68,32.71,33.49,34.27,35.09,35.75,37.24,37.73,38.8,39.84,41.55,43.21,45.05,46.9,48.6,49.49,50.87,51.86,53.13,54.45,55.16,55.62],a:[595,599,606,611,620,625,635,644,653,665,675,684,697,705,741,782,770,735,710,707,689,651,655,657,658,658,670,701,713,719,746,758,775,796,751,742,729,714,708,700,690,682,670,658,647,639,627,629,611,602,597,595],mn:570,mx:820};
+
+
+function mkGPSIcon(color, sz) {
+  return L.divIcon({html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>`,className:'',iconAnchor:[sz/2,sz/2]});
+}
+
+function initGPS(n, track, pts, perf) {
+  const map = L.map('map'+n, {zoomControl:true, scrollWheelZoom:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:18}).addTo(map);
+  L.polyline(track, {color:'#1B6B47', weight:4, opacity:.95}).addTo(map);
+  pts.forEach(p => L.marker([p.lat,p.lon],{icon:mkGPSIcon(p.t==='o'?'#E8520A':'#1B6B47',p.t==='o'||p.t==='m'?13:10)}).addTo(map).bindPopup(`<strong style="font-size:12px">${p.n}</strong>`));
+  map.fitBounds(L.latLngBounds(track).pad(0.08));
+  // Perfil
+  const ctx = document.getElementById('p'+n).getContext('2d');
+  const g = ctx.createLinearGradient(0,0,0,100); g.addColorStop(0,'rgba(27,107,71,.2)'); g.addColorStop(1,'rgba(27,107,71,.01)');
+  new Chart(ctx,{type:'line',data:{labels:perf.l.map(x=>''+x),datasets:[{data:perf.a,fill:true,backgroundColor:g,borderColor:'#1B6B47',borderWidth:2.5,pointRadius:0,pointHoverRadius:4,tension:.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0D3D28',titleColor:'rgba(255,255,255,.7)',bodyColor:'white',padding:7,cornerRadius:5,callbacks:{label:c=>`${c.parsed.y} m`,title:c=>`km ${c[0].label}`}}},scales:{y:{min:perf.mn,max:perf.mx,grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#9B9B98',font:{size:9},callback:v=>v+'m'}},x:{grid:{display:false},ticks:{color:'#9B9B98',font:{size:9},maxRotation:0,callback:(v,i)=>i%8===0?perf.l[i]+'':''}}}}}); 
+}
+
+// ══ LAZY LOAD ══
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting || e.target._done) return;
+    e.target._done = true;
+    const id = e.target.id;
+    if (id==='m1') initGPS(1,TRACK_m1,[{lat:40.48886,lon:-3.37459,n:'Alcalá · Salida/Meta',t:'o'},{lat:40.54868,lon:-3.33962,n:'Camarma · km ~11',t:'r'},{lat:40.628324,lon:-3.340236,n:'Torrejón del Rey · km ~22',t:'r'},{lat:40.6952,lon:-3.3377,n:'Galápagos · km ~31 · 739 m',t:'m'}],PERF_m1);
+    if (id==='m2') initGPS(2,TRACK_m2,[{lat:40.48918,lon:-3.37476,n:'Alcalá · Salida/Meta',t:'o'},{lat:40.53136,lon:-3.34017,n:'Torrejón del Rey · km ~16',t:'r'},{lat:40.64644,lon:-3.3381,n:'Valdeaveruelo · km ~25 · 800 m',t:'m'}],PERF_m2);
+    if (id==='m3') initGPS(3,TRACK_m3,[{lat:40.48911,lon:-3.37451,n:'Alcalá · Salida/Meta',t:'o'},{lat:40.64934,lon:-3.3387,n:'Cruce Las Castillas · km ~24 · 805 m',t:'m'},{lat:40.6952,lon:-3.3377,n:'Galápagos · km ~32 · 739 m',t:'r'},{lat:40.54518,lon:-3.38101,n:'Camarma · km ~49',t:'r'}],PERF_m3);
+    if (id==='m4') initGPS(4,TRACK_m4,[{lat:40.49014,lon:-3.37569,n:'Alcalá · Salida/Meta',t:'o'},{lat:40.62508,lon:-3.3428,n:'Quer · km ~30',t:'r'},{lat:40.64644,lon:-3.3381,n:'Valdeaveruelo · km ~38 · 800 m',t:'m'}],PERF_m4);
+    obs.unobserve(e.target);
+  });
+},{threshold:0.05});
+document.querySelectorAll('.ficha[id]').forEach(f=>obs.observe(f));
+
+// Índice activo
+const idxLinks = document.querySelectorAll('.ii');
+const idxObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) idxLinks.forEach(l=>l.classList.toggle('act',l.getAttribute('href')==='#'+e.target.id)); });
+},{rootMargin:'-25% 0px -65% 0px'});
+document.querySelectorAll('.ficha[id],.ficha-pend[id]').forEach(f=>idxObs.observe(f));
+</script>
+</body>
+</html>
